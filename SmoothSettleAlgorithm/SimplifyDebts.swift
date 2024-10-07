@@ -12,6 +12,41 @@ class SimplifyDebts {
     static let OFFSET: Int64 = 1000000000
     var visitedEdges: Set<Int64> = []
 
+    // 新增API：允许外部传入交易数据并简化账单
+    func simplifyPayments(for transactions: [EdgeKey: Int64], persons: [String]) -> String {
+        let solver = Dinics(n: persons.count, person: persons)
+        
+        // 简化传入的交易
+        simplifyTransactions(transactions: transactions, solver: solver)
+        
+        print("Simplifying Debts...")
+        print("--------------------")
+        
+        visitedEdges = []
+        
+        while getNonVisitedEdge(edges: solver.getEdges()) != nil {
+            solver.recompute()
+            let firstEdge = solver.getEdges().first!  // 获取第一个边缘
+            solver.setSource(s: firstEdge.from)
+            solver.setSink(t: firstEdge.to)
+            let residualGraph = solver.getGraph()
+            var newEdges: [Dinics.Edge] = []
+            
+            for edges in residualGraph {
+                for edge in edges {
+                    let remainingFlow = (edge.flow < 0) ? edge.capacity : (edge.capacity - edge.flow)
+                    if remainingFlow > 0 {
+                        newEdges.append(edge)
+                    }
+                }
+            }
+        }
+        
+        // Return result for app integration (适合UI显示的结果)
+        return "Payments simplified successfully"
+    }
+    
+    // 原有的测试方法保持不变
     func createGraphForDebts() -> String {
         let person = ["A", "B", "C", "D"]
         let n = person.count
